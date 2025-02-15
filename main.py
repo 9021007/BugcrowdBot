@@ -9,19 +9,28 @@ with open('config.json', 'r') as f:
     data = json.load(f)
     token = data['token']
     mode = data['mode']
-    testbotlogchannel = data['testbotlogchannel']
-    testhackerrole = data['testhackerrole']
-    testserver = data['testserver']
-    prodbotlogchannel = data['prodbotlogchannel']
-    prodhackerrole = data['prodhackerrole']
-    prodserver = data['prodserver']
+    testbotlogchannel = int(data['testbotlogchannel'])
+    testhackerrole = int(data['testhackerrole'])
+    testserver = int(data['testserver'])
+    prodbotlogchannel = int(data['prodbotlogchannel'])
+    prodhackerrole = int(data['prodhackerrole'])
+    prodserver = int(data['prodserver'])
     bugcrowdlogourl = data['bugcrowdlogourl']
 
-# legalembed=discord.Embed(title="Bugcrowd is for legal hacking!", description="This Discord server is for hackers who get permission when targeting companies. If you are looking to hire a hacker to attack a target for you, unless you have that target's explicit consent, we can't help you.")
-# legalembed.set_thumbnail(url=bugcrowdlogourl)
-# legalembed.add_field(name="No, just becuase your account was hacked doesn't make it legal to \"hack back\".", value="To hack your account, we would have to hack the company your account is on (i.e. Instagram, Google, etc), and they didn't give consent! Hacking those companies without consent is illegal.", inline=False)
-# legalembed.add_field(name="No, we cannot recover your crypto.", value="Anyone claiming to be able to is a scammer.", inline=False)
-# legalembed.add_field(name="No, we will not find the location or name of a person, even if they are doing something wrong.", value="That is just stalking. Two wrongs don't make a right.", inline=True)
+if mode == "test":
+    hackerrole = testhackerrole
+    botlogchannel = testbotlogchannel
+    server = testserver
+elif mode == "prod":
+    hackerrole = prodhackerrole
+    botlogchannel = prodbotlogchannel
+    server = prodserver
+else:
+    print("Invalid mode in config.json. Please enter 'test' or 'prod'.")
+    exit()
+
+with open('rules.txt', 'r') as f:
+    rules = f.read()
 
 legalembed=discord.Embed(title="Bugcrowd is for legal hacking!", color=0xed7123)
 legalembed.set_thumbnail(url=bugcrowdlogourl)
@@ -35,18 +44,27 @@ async def on_ready():
     print(f'We have logged in as {client.user}')
 
 def logToChannel(message):
-    guildtosend = 0
-    if mode == "test":
-        guildtosend = testbotlogchannel
-    elif mode == "prod":
-        guildtosend = prodbotlogchannel
-    return client.get_channel(guildtosend).send(message)
+    return client.get_channel(botlogchannel).send(message)
+
+async def allowIn(interaction):
+    await interaction.response.send_message(rules, view=rulesView(), ephemeral=True)
+
+class rulesView(discord.ui.View): # buttons on the "I solemnly swear" embed
+    @discord.ui.button(label="I agree", row=0, style=discord.ButtonStyle.secondary)
+    async def first_button_callback(self, button, interaction):
+        await interaction.response.send_message('Welcome to the Bugcrowd Discord!', ephemeral=True)
+        await interaction.user.add_roles(discord.Object(hackerrole))
+
+    @discord.ui.button(label="I don't agree", row=0, style=discord.ButtonStyle.secondary)
+    async def second_button_callback(self, button, interaction):
+        await interaction.response.send_message('You must agree to the rules to join the Bugcrowd Discord.', ephemeral=True)
         
 
 class firstView(discord.ui.View): # buttons on the initial embed
     @discord.ui.button(label="A hacker", row=0, style=discord.ButtonStyle.primary)
     async def first_button_callback(self, button, interaction):
-        await interaction.response.send_message('Welcome!', ephemeral=True)
+        # await interaction.response.send_message('Welcome!', ephemeral=True)
+        await allowIn(interaction)
 
     @discord.ui.button(label="Looking for hackers", row=1, style=discord.ButtonStyle.primary)
     async def second_button_callback(self, button, interaction):
@@ -64,7 +82,8 @@ class firstView(discord.ui.View): # buttons on the initial embed
 class extraFirstView(discord.ui.View): # buttons on the "Something Else" embed
     @discord.ui.button(label="A hacker", row=0, style=discord.ButtonStyle.primary)
     async def first_button_callback(self, button, interaction):
-        await interaction.response.send_message('Welcome!', ephemeral=True)
+        # await interaction.response.send_message('Welcome!', ephemeral=True)
+        await allowIn(interaction)
 
     @discord.ui.button(label="Looking for hackers", row=1, style=discord.ButtonStyle.primary)
     async def second_button_callback(self, button, interaction):
@@ -77,19 +96,23 @@ class extraFirstView(discord.ui.View): # buttons on the "Something Else" embed
 
     @discord.ui.button(label="Learning to hack", row=2, style=discord.ButtonStyle.secondary)
     async def third_button_callback(self, button, interaction):
-        await interaction.response.send_message('Welcome!', ephemeral=True)
+        # await interaction.response.send_message('Welcome!', ephemeral=True)
+        await allowIn(interaction)
 
     @discord.ui.button(label="Curious about the industry", row=2, style=discord.ButtonStyle.secondary)
     async def fourth_button_callback(self, button, interaction):
-        await interaction.response.send_message('Welcome!', ephemeral=True)
+        # await interaction.response.send_message('Welcome!', ephemeral=True)
+        await allowIn(interaction)
 
     @discord.ui.button(label="Looking for collaborators", row=2, style=discord.ButtonStyle.secondary)
     async def fifth_button_callback(self, button, interaction):
-        await interaction.response.send_message('Welcome!', ephemeral=True)
+        # await interaction.response.send_message('Welcome!', ephemeral=True)
+        await allowIn(interaction)
 
     @discord.ui.button(label="VDP/BBP Target representative", row=2, style=discord.ButtonStyle.secondary)
     async def sixth_button_callback(self, button, interaction):
-        await interaction.response.send_message('Welcome!', ephemeral=True)
+        # await interaction.response.send_message('Welcome!', ephemeral=True)
+        await allowIn(interaction)
 
 class secondView(discord.ui.View): # buttons on the "I am looking for a hacker" embed
     @discord.ui.button(label="A person", row=0, style=discord.ButtonStyle.primary)
@@ -124,7 +147,8 @@ class skidView(discord.ui.View): # buttons on the "I am looking for a hacker" > 
 class swearView(discord.ui.View): # buttons on the "I solemnly swear" embed
     @discord.ui.button(label="I swear", row=0, style=discord.ButtonStyle.secondary)
     async def first_button_callback(self, button, interaction):
-        await interaction.response.send_message('Welcome to the Bugcrowd Discord!', ephemeral=True)
+        # await interaction.response.send_message('Welcome to the Bugcrowd Discord!', ephemeral=True)
+        await allowIn(interaction)
 
     @discord.ui.button(label="I don't swear", row=0, style=discord.ButtonStyle.secondary)
     async def second_button_callback(self, button, interaction):
@@ -138,7 +162,7 @@ async def on_message(message):
     if message.content.startswith('$createembed'): # create an embed
 
         # check if ok to send
-        if (message.guild.id != testserver and mode == "test") or (message.guild.id != prodserver and mode == "prod"):
+        if message.guild.id != server:
             return
 
         if message.author.guild_permissions.kick_members:
@@ -162,7 +186,7 @@ async def on_message(message):
 @client.message_command(name="Legal Reminder")
 async def legalreply(ctx, message: discord.Message):
 
-    if (message.guild.id != testserver and mode == "test") or (message.guild.id != prodserver and mode == "prod"):
+    if message.guild.id != server:
         return
 
     # if not ctx.author.permissions_in(message.channel).send_messages:
