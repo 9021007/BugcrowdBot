@@ -1,0 +1,16 @@
+{
+    "token": "token here",
+
+    "mode": "put test or prod in this section",
+
+    "testbotlogchannel": "1234",
+    "testhackerrole": "1234",
+    "testserver": "1234",
+
+    "prodserver": "1234",
+    "prodbotlogchannel": "1234",
+    "prodhackerrole": "1234",
+
+    "bugcrowdlogourl": "logo url here",
+    "embedcolor": "#123456"
+}
