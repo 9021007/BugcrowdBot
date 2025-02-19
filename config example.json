@@ -11,5 +11,6 @@
     "prodbotlogchannel": "1234",
     "prodhackerrole": "1234",
 
-    "bugcrowdlogourl": "logo url here"
+    "bugcrowdlogourl": "logo url here",
+    "embedcolor": "#123456"
 }

@@ -1,6 +1,9 @@
 import discord
 import json
 import re
+import platform
+import psutil
+import datetime
 
 # SETTINGS and PREFABS
 
@@ -16,6 +19,7 @@ with open('config.json', 'r') as f:
     prodhackerrole = int(data['prodhackerrole'])
     prodserver = int(data['prodserver'])
     bugcrowdlogourl = data['bugcrowdlogourl']
+    embedcolor = int(data['embedcolor'][1:], 16)
 
 if mode == "test":
     hackerrole = testhackerrole
@@ -32,9 +36,11 @@ else:
 with open('rules.txt', 'r') as f:
     rules = f.read()
 
-legalembed=discord.Embed(title="Bugcrowd is for legal hacking!", color=0xed7123)
+legalembed=discord.Embed(title="Bugcrowd is for legal hacking!", color=embedcolor)
 legalembed.set_thumbnail(url=bugcrowdlogourl)
-legalembed.add_field(name="", value="Do not request or discuss illegal hacking. Hacking violates not only the server rules, but the law. If you are trying to get an account recovered, contact that platform's support. This is your final warning, next time is a ban.", inline=False)
+legalembed.add_field(name="", value="Do not request or discuss illegal hacking. Hacking violates not only the server rules, but the law. If you are trying to get an account recovered, contact that platform's support.", inline=False)
+
+starttime = datetime.datetime.now()
 
 # initialize the bot client
 client = discord.Bot(intents=discord.Intents.all())
@@ -48,6 +54,7 @@ def logToChannel(message):
 
 async def allowIn(interaction):
     await interaction.response.send_message(rules, view=rulesView(), ephemeral=True)
+    await logToChannel(f"User {interaction.user} agreed to the rules in the screener.")
 
 class rulesView(discord.ui.View): # buttons on the "I solemnly swear" embed
     @discord.ui.button(label="I agree", row=0, style=discord.ButtonStyle.secondary)
@@ -69,7 +76,7 @@ class firstView(discord.ui.View): # buttons on the initial embed
     @discord.ui.button(label="Looking for hackers", row=1, style=discord.ButtonStyle.primary)
     async def second_button_callback(self, button, interaction):
 
-        embed=discord.Embed(title="Sounds good!", description="Keep answering the questions to get started.", color=0xed722e)
+        embed=discord.Embed(title="Sounds good!", description="Keep answering the questions to get started.", color=embedcolor)
         embed.set_thumbnail(url=bugcrowdlogourl)
         embed.add_field(name="Answer this question:", value="I am...", inline=False)
         
@@ -88,7 +95,7 @@ class extraFirstView(discord.ui.View): # buttons on the "Something Else" embed
     @discord.ui.button(label="Looking for hackers", row=1, style=discord.ButtonStyle.primary)
     async def second_button_callback(self, button, interaction):
 
-        embed=discord.Embed(title="Sounds good!", description="Keep answering the questions to get started.", color=0xed722e)
+        embed=discord.Embed(title="Sounds good!", description="Keep answering the questions to get started.", color=embedcolor)
         embed.set_thumbnail(url=bugcrowdlogourl)
         embed.add_field(name="Answer this question:", value="I am...", inline=False)
         
@@ -123,7 +130,7 @@ class secondView(discord.ui.View): # buttons on the "I am looking for a hacker" 
     
     @discord.ui.button(label="A company", row=1, style=discord.ButtonStyle.primary)
     async def second_button_callback(self, button, interaction):
-        embed=discord.Embed(title="#1 Crowdsourced Cybersecurity Platform | Bugcrowd", url="https://www.bugcrowd.com", description="Bugcrowd offers a platform that combines data, technology, human intelligence, and remediation workflows to secure your digital innovation. You can collaborate with a global community of trusted researchers, configure pen tests, and access vulnerability reports from the public.", color=0xed722e)
+        embed=discord.Embed(title="#1 Crowdsourced Cybersecurity Platform | Bugcrowd", url="https://www.bugcrowd.com", description="Bugcrowd offers a platform that combines data, technology, human intelligence, and remediation workflows to secure your digital innovation. You can collaborate with a global community of trusted researchers, configure pen tests, and access vulnerability reports from the public.", color=embedcolor)
         embed.set_thumbnail(url=bugcrowdlogourl)
         embed.add_field(name="To get started with joining Bugcrowd, head to the website!", value="", inline=True)
         await interaction.response.send_message(embed=embed, view=companyLinkView(), ephemeral=True)
@@ -166,7 +173,7 @@ async def on_message(message):
             return
 
         if message.author.guild_permissions.kick_members:
-            embed=discord.Embed(title="Welcome to the Bugcrowd Discord!", description="Bugcrowd's online hacker community. Hacking discussion, collaboration, networking, giveaways, and pizza parties.", color=0xed722e)
+            embed=discord.Embed(title="Welcome to the Bugcrowd Discord!", description="Bugcrowd's online hacker community. Hacking discussion, collaboration, networking, giveaways, and pizza parties.", color=embedcolor)
             embed.set_thumbnail(url=bugcrowdlogourl)
             embed.add_field(name="Answer this question:", value="I am...", inline=False)
             await message.channel.send(embed=embed, view=firstView(timeout=None))
@@ -178,9 +185,21 @@ async def on_message(message):
 
 # SLASH COMMANDS
 
-# @client.command(description="Sends the bot's latency.")
-# async def ping(ctx):
-#     await ctx.respond(f"Pong! Latency is {client.latency}")
+@client.command(description="Bot info and status check")
+async def ping(ctx):
+    uptime = datetime.datetime.now() - starttimex
+    embed=discord.Embed(title="Bugcrowd Bot", description="A bot for the Bugcrowd Discord server.", color=embedcolor)
+    embed.set_thumbnail(url=bugcrowdlogourl)
+    embed.add_field(name="Status", value="Online", inline=True)
+    embed.add_field(name="Mode", value=mode, inline=True)
+    embed.add_field(name="Latency", value=f"{client.latency * 1000:.2f}ms", inline=True)
+    embed.add_field(name="Python Version", value=platform.python_version(), inline=True)
+    embed.add_field(name="Discord.py", value=discord.__version__, inline=True)
+    embed.add_field(name="Server", value=platform.system() + " " + platform.release(), inline=True)
+    embed.add_field(name="CPU", value=platform.processor(), inline=True)
+    embed.add_field(name="Memory", value=f"{psutil.virtual_memory().percent}%", inline=True)
+    embed.add_field(name="Uptime", value=f'{uptime.days} days, {uptime.seconds//3600} hours, {(uptime.seconds//60)%60} minutes', inline=True)
+    await ctx.respond(embed=embed)
 
 # legal warning with reply
 @client.message_command(name="Legal Reminder")
@@ -193,7 +212,7 @@ async def legalreply(ctx, message: discord.Message):
     if not message.channel.permissions_for(ctx.author).send_messages:
         await ctx.respond("You don't have permission to send messages in that channel.")
         return
-    legalembed.set_footer(text="Anyone offering to hack without permission is a scammer.")
+    legalembed.set_footer(text="ANYONE offering to hack without permission is trying to SCAM YOU, ignore any DMs from people claiming to be able to do so.")
     await ctx.respond(f'<@{message.author.id}>',embed=legalembed, view=None, ephemeral=False)
 
 # run the bot
