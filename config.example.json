@@ -1,6 +1,7 @@
 {
     "token": "token here",
-
+    "db_db": "exampledb",
+    "db_user": "exampleuser",
     "mode": "put test or prod in this section",
 
     "testbotlogchannel": "1234",
