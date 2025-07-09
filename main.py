@@ -5,6 +5,8 @@ import platform
 import psutil
 import datetime
 import pg8000.native
+from cannedresponses import *
+from verificationui import *
 
 # SETTINGS and PREFABS
 
@@ -36,9 +38,6 @@ else:
     print("Invalid mode in config.json. Please enter 'test' or 'prod'.")
     exit()
 
-with open('rules.txt', 'r') as f:
-    rules = f.read()
-
 # connect to the database
 try:
     con = pg8000.native.Connection(database=db_db, user=db_user)
@@ -46,11 +45,6 @@ try:
 except Exception as e:
     print(f"Error connecting to the database: {e}")
     exit()
-
-
-legalembed=discord.Embed(title="Bugcrowd is for legal hacking!", color=embedcolor)
-legalembed.set_thumbnail(url=bugcrowdlogourl)
-legalembed.add_field(name="", value="Do not request or discuss illegal hacking. Hacking violates not only the server rules, but the law. If you are trying to get an account recovered, contact that platform's support.", inline=False)
 
 starttime = datetime.datetime.now()
 
@@ -63,122 +57,6 @@ async def on_ready():
     client.persistent_views_added = True
     print(f'We have logged in as {client.user}')
 
-def logToChannel(message):
-    return client.get_channel(botlogchannel).send(message)
-
-async def allowIn(interaction):
-    await interaction.response.send_message(rules, view=rulesView(), ephemeral=True)
-    
-
-class rulesView(discord.ui.View): # buttons on the "I solemnly swear" embed
-    @discord.ui.button(label="I agree", row=0, style=discord.ButtonStyle.secondary)
-    async def first_button_callback(self, button, interaction):
-        await interaction.response.send_message('Welcome to the Bugcrowd Discord!', ephemeral=True)
-        await logToChannel(f"User {interaction.user} agreed to the rules in the screener.")
-        await interaction.user.add_roles(discord.Object(hackerrole))
-
-    @discord.ui.button(label="I don't agree", row=0, style=discord.ButtonStyle.secondary)
-    async def second_button_callback(self, button, interaction):
-        await interaction.response.send_message('You must agree to the rules to join the Bugcrowd Discord.', ephemeral=True)
-        
-
-class firstView(discord.ui.View): # buttons on the initial embed
-    def __init__(self):
-        super().__init__(timeout=None)
-    @discord.ui.button(label="A hacker", row=0, style=discord.ButtonStyle.primary, custom_id="hacker_button")
-    async def first_button_callback(self, button, interaction):
-        # await interaction.response.send_message('Welcome!', ephemeral=True)
-        await allowIn(interaction)
-
-    @discord.ui.button(label="Looking for hackers", row=1, style=discord.ButtonStyle.primary, custom_id="looking_for_hackers_button")
-    async def second_button_callback(self, button, interaction):
-
-        embed=discord.Embed(title="Sounds good!", description="Keep answering the questions to get started.", color=embedcolor)
-        embed.set_thumbnail(url=bugcrowdlogourl)
-        embed.add_field(name="Answer this question:", value="I am...", inline=False)
-        
-        await interaction.response.send_message(embed=embed, view=secondView(), ephemeral=True)
-    
-    @discord.ui.button(label="Something Else", row=2, style=discord.ButtonStyle.secondary, custom_id="something_else_button")
-    async def third_button_callback(self, button, interaction):
-        await interaction.response.send_message('Here are some more options:', view=extraFirstView(), ephemeral=True)
-
-class extraFirstView(discord.ui.View): # buttons on the "Something Else" embed
-    @discord.ui.button(label="A hacker", row=0, style=discord.ButtonStyle.primary)
-    async def first_button_callback(self, button, interaction):
-        # await interaction.response.send_message('Welcome!', ephemeral=True)
-        await allowIn(interaction)
-
-    @discord.ui.button(label="Looking for hackers", row=1, style=discord.ButtonStyle.primary)
-    async def second_button_callback(self, button, interaction):
-
-        embed=discord.Embed(title="Sounds good!", description="Keep answering the questions to get started.", color=embedcolor)
-        embed.set_thumbnail(url=bugcrowdlogourl)
-        embed.add_field(name="Answer this question:", value="I am...", inline=False)
-        
-        await interaction.response.send_message(embed=embed, view=secondView(), ephemeral=True)
-
-    @discord.ui.button(label="Learning to hack", row=2, style=discord.ButtonStyle.secondary)
-    async def third_button_callback(self, button, interaction):
-        logToChannel(f"User {interaction.user} selected they are learning to hack in the screener.")
-        await allowIn(interaction)
-
-    @discord.ui.button(label="Curious about the industry", row=2, style=discord.ButtonStyle.secondary)
-    async def fourth_button_callback(self, button, interaction):
-        await logToChannel(f"User {interaction.user} selected they are curious about the industry in the screener.")
-        await allowIn(interaction)
-
-    @discord.ui.button(label="Looking for collaborators", row=2, style=discord.ButtonStyle.secondary)
-    async def fifth_button_callback(self, button, interaction):
-        await logToChannel(f"User {interaction.user} selected they are looking for collaborators in the screener.")
-        await allowIn(interaction)
-
-    @discord.ui.button(label="VDP/BBP Target representative", row=2, style=discord.ButtonStyle.secondary)
-    async def sixth_button_callback(self, button, interaction):
-        await logToChannel(f"User {interaction.user} selected they are a VDP/BBP Target representative in the screener.")
-        await allowIn(interaction)
-
-class secondView(discord.ui.View): # buttons on the "I am looking for a hacker" embed
-    @discord.ui.button(label="A person", row=0, style=discord.ButtonStyle.primary)
-    async def first_button_callback(self, button, interaction):
-        legalembed.set_footer(text="If you aren't here to ask for illegal hacking, press the gray button.")
-        await interaction.response.send_message(embed=legalembed, view=skidView(), ephemeral=True)
-        await logToChannel(f"User {interaction.user} selected they are a person looking for a hacker in the screener.")
-    
-    @discord.ui.button(label="A company", row=1, style=discord.ButtonStyle.primary)
-    async def second_button_callback(self, button, interaction):
-        embed=discord.Embed(title="#1 Crowdsourced Cybersecurity Platform | Bugcrowd", url="https://www.bugcrowd.com", description="Bugcrowd offers a platform that combines data, technology, human intelligence, and remediation workflows to secure your digital innovation. You can collaborate with a global community of trusted researchers, configure pen tests, and access vulnerability reports from the public.", color=embedcolor)
-        embed.set_thumbnail(url=bugcrowdlogourl)
-        embed.add_field(name="To get started with joining Bugcrowd, head to the website!", value="", inline=True)
-        await interaction.response.send_message(embed=embed, view=companyLinkView(), ephemeral=True)
-
-class companyLinkView(discord.ui.View): # button on the "I am looking for a hacker" > "I am a company" embed
-    def __init__(self):
-        super().__init__()
-        self.add_item(discord.ui.Button(label="Learn More", url="https://www.bugcrowd.com"))
-
-class skidView(discord.ui.View): # buttons on the "I am looking for a hacker" > "I am a person" embed
-    @discord.ui.button(label="Leave Server", row=0, style=discord.ButtonStyle.primary)
-    async def first_button_callback(self, button, interaction):
-        await interaction.response.send_message('Goodbye!', ephemeral=True)
-        await interaction.user.kick(reason="User selected they are a skid.")
-        await logToChannel(f"User {interaction.user} was kicked for selecting they are a skid in the screener.")
-    
-    @discord.ui.button(label="Stay", row=0, style=discord.ButtonStyle.secondary)
-    async def second_button_callback(self, button, interaction):
-        await logToChannel(f"User {interaction.user} arrived at the 'I solemnly swear' embed in the screener.")
-        await interaction.response.send_message('# I solemnly swear that...\n\n### 🚫 - I am not asking for someone to recover an account\n\n### 🚫 - I am not asking someone to track down an alledged scammer\n\n### 🚫 - I am not asking someone to stalk my ex\n\n## __Understood?__\n-# If you don\'t listen, you will be banned. The moderators can see that you have read this message.', view=swearView(), ephemeral=True)
-
-class swearView(discord.ui.View): # buttons on the "I solemnly swear" embed
-    @discord.ui.button(label="I swear", row=0, style=discord.ButtonStyle.secondary)
-    async def first_button_callback(self, button, interaction):
-        await logToChannel(f"User {interaction.user} selected they swear in the screener.")
-        await allowIn(interaction)
-
-    @discord.ui.button(label="I don't swear", row=0, style=discord.ButtonStyle.secondary)
-    async def second_button_callback(self, button, interaction):
-        await logToChannel(f"User {interaction.user} selected they don't swear in the screener.")
-        await interaction.response.send_message('Sorry, but you must swear to join the Bugcrowd Discord.', ephemeral=True)
 
 @client.event # when a message is sent in chat
 async def on_message(message):
@@ -199,6 +77,15 @@ async def on_message(message):
         else:
             await message.channel.send("You must be an administrator to use this command.")
             await logToChannel(f"User {message.author} tried to use the $createembed command without permission.")
+
+    if re.search(r'(?:i have a question|(?:hey )?can (?:some|any)(?:one |body )help(?: me)?(?: out)?|i need help|(?:some|any)(?:one|body) (?:online|available|here))(?: please)?', message.content, re.IGNORECASE):
+        # check if ok to send
+        if message.guild.id != server:
+            return
+
+        # if message count less than 15
+        if con.run("SELECT count FROM leaderboard WHERE user_id = :user_id", user_id=message.author.id):
+            await message.reply(embed=dontasktoaskembed, mention_author=True)
 
     # increment the leaderboard, cols are ['user_id', 'count']
     con.run("INSERT INTO leaderboard (user_id, count) VALUES (:user_id, 1) ON CONFLICT (user_id) DO UPDATE SET count = leaderboard.count + 1", user_id=message.author.id)
@@ -227,24 +114,16 @@ async def ping(ctx):
 
 @client.command(description="View the message leaderboard")
 async def leaderboard(ctx):
-    
-
     # fetch the leaderboard from the database
     leaderboard = con.run("SELECT user_id, count FROM leaderboard ORDER BY count DESC LIMIT 10")
     yourcount = con.run("SELECT count FROM leaderboard WHERE user_id = :user_id", user_id=ctx.author.id)
     
     embed = discord.Embed(title="Leaderboard", description="Top 10 users by message count", color=embedcolor)
     embed.set_thumbnail(url=bugcrowdlogourl)
-
+    place = 1
     for row in leaderboard:
-
-        try:
-            thisuser = await client.fetch_user(row[0])
-        except discord.NotFound:
-            thisuser = f"User {row[0]} (not found)"
-        except discord.HTTPException:
-            thisuser = f"User {row[0]} (not found)"
-        embed.add_field(name=thisuser, value=row[1], inline=False)
+        embed.add_field(name=f"Number {place}", value=f'<@{row[0]}>\n{row[1]} Messages\n', inline=False)
+        place += 1
 
     if yourcount:
         yourcount = yourcount[0][0]
@@ -252,19 +131,53 @@ async def leaderboard(ctx):
 
     await ctx.respond(embed=embed)
 
-# legal warning with reply
-@client.message_command(name="Legal Reminder")
-async def legalreply(ctx, message: discord.Message):
+# accept message author id
+class CannedResponseView(discord.ui.View):
+    def __init__(self, targetid):
+        super().__init__(timeout=None)
+        self.targetid = targetid
 
+    @discord.ui.select(placeholder="Select a canned response", options=[
+        discord.SelectOption(label="Legal Reply", value="legal_reply"),
+        discord.SelectOption(label="The Beginner's Guide", value="beginners_guide"),
+        discord.SelectOption(label="Items Needed", value="items_needed"),
+        discord.SelectOption(label="Don't Ask to Ask", value="dont_ask_to_ask"),
+        discord.SelectOption(label="Hacking Back an Account", value="hacking_back")
+    ])
+    async def select_callback(self, select, interaction):
+        tosend = None
+        if select.values[0] == "legal_reply":
+            tosend = legalembed
+            tosend.set_footer(text="ANYONE offering to hack without permission is trying to SCAM YOU, ignore any DMs from people claiming to be able to do so.")
+        elif select.values[0] == "beginners_guide":
+            tosend = beginnersguideembed
+        elif select.values[0] == "items_needed":
+            tosend = itemsneededembed
+        elif select.values[0] == "dont_ask_to_ask":
+            tosend = dontasktoaskembed
+        elif select.values[0] == "hacking_back":
+            tosend = hackingbackembed
+        await interaction.response.send_message(f'<@{self.targetid}>', embed=tosend, ephemeral=False)
+
+
+    
+
+    
+ 
+
+@client.message_command(name="Canned Responses")
+async def cannedresponses(ctx, message: discord.Message):
+    # dropdown menu with options
     if message.guild.id != server:
         return
-
-    # if not ctx.author.permissions_in(message.channel).send_messages:
     if not message.channel.permissions_for(ctx.author).send_messages:
         await ctx.respond("You don't have permission to send messages in that channel.")
         return
-    legalembed.set_footer(text="ANYONE offering to hack without permission is trying to SCAM YOU, ignore any DMs from people claiming to be able to do so.")
-    await ctx.respond(f'<@{message.author.id}>',embed=legalembed, view=None, ephemeral=False)
+    embed = discord.Embed(title="Canned Responses", description="A list of canned responses for common questions.", color=embedcolor)
+    embed.set_thumbnail(url=bugcrowdlogourl)
+    embed.add_field(name="Select a response:", value="Use the dropdown menu below to select a canned response.", inline=False)
+    view = CannedResponseView(targetid=message.author.id)
+    await ctx.respond(embed=embed, view=view, ephemeral=True)
 
 # run the bot
 client.run(token)
