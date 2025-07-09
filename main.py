@@ -98,7 +98,7 @@ async def on_message(message):
 
 @client.command(description="Bot info and status check")
 async def ping(ctx):
-    uptime = datetime.datetime.now() - starttimex
+    uptime = datetime.datetime.now() - starttime
     embed=discord.Embed(title="Bugcrowd Bot", description="A bot for the Bugcrowd Discord server.", color=embedcolor)
     embed.set_thumbnail(url=bugcrowdlogourl)
     embed.add_field(name="Status", value="Online", inline=True)
