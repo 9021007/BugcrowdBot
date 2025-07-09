@@ -3,10 +3,28 @@ import json
 
 with open('config.json', 'r') as f:
     data = json.load(f)
+    token = data['token']
+    mode = data['mode']
+    testbotlogchannel = int(data['testbotlogchannel'])
+    testhackerrole = int(data['testhackerrole'])
+    testserver = int(data['testserver'])
+    prodbotlogchannel = int(data['prodbotlogchannel'])
+    prodhackerrole = int(data['prodhackerrole'])
+    prodserver = int(data['prodserver'])
     bugcrowdlogourl = data['bugcrowdlogourl']
     embedcolor = int(data['embedcolor'][1:], 16)
+    db_db=data['db_db']
+    db_user=data['db_user']
 with open('rules.txt', 'r') as f:
     rules = f.read()
+if mode == "test":
+    hackerrole = testhackerrole
+    botlogchannel = testbotlogchannel
+    server = testserver
+elif mode == "prod":
+    hackerrole = prodhackerrole
+    botlogchannel = prodbotlogchannel
+    server = prodserver
 
 def logToChannel(message):
     return client.get_channel(botlogchannel).send(message)
