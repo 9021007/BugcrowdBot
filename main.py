@@ -123,7 +123,7 @@ async def leaderboard(ctx):
     embed.set_thumbnail(url=bugcrowdlogourl)
     place = 1
     for row in leaderboard:
-        embed.add_field(name=f"Number {place}", value=f'<@{row[0]}>\n{row[1]} Messages\n', inline=False)
+        embed.add_field(name=f"", value=f'`{place}` - <@{row[0]}> - **{row[1]}** Messages\n', inline=False)
         place += 1
 
     if yourcount:
