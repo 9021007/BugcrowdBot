@@ -1,4 +1,5 @@
 import discord
+from discord.ext import tasks
 import json
 import re
 import platform
@@ -18,22 +19,28 @@ with open('config.json', 'r') as f:
     testbotlogchannel = int(data['testbotlogchannel'])
     testhackerrole = int(data['testhackerrole'])
     testserver = int(data['testserver'])
+    testcrowdstream = int(data['testcrowdstream'])
     prodbotlogchannel = int(data['prodbotlogchannel'])
     prodhackerrole = int(data['prodhackerrole'])
     prodserver = int(data['prodserver'])
+    prodcrowdstream = int(data['prodcrowdstream'])
     bugcrowdlogourl = data['bugcrowdlogourl']
     embedcolor = int(data['embedcolor'][1:], 16)
     db_db=data['db_db']
     db_user=data['db_user']
+    crowdstreamurl = data['crowdstreamurl']
+    pemojis= data['pemojis']
 
 if mode == "test":
     hackerrole = testhackerrole
     botlogchannel = testbotlogchannel
     server = testserver
+    crowdstream = testcrowdstream
 elif mode == "prod":
     hackerrole = prodhackerrole
     botlogchannel = prodbotlogchannel
     server = prodserver
+    crowdstream = prodcrowdstream
 else:
     print("Invalid mode in config.json. Please enter 'test' or 'prod'.")
     exit()
@@ -51,11 +58,48 @@ starttime = datetime.datetime.now()
 # initialize the bot client
 client = discord.Bot(intents=discord.Intents.all(), persistent_views_added = False)
 
+@tasks.loop(minutes=1)
+async def crowdStreamCheck():
+    try:
+        async with client.http._HTTPClient__session.get(crowdstreamurl) as response:
+            if response.status == 200:
+                data = await response.json()
+                latestCsUUID = con.run("SELECT latest_crowdstream FROM data")[0][0]
+                print(f"Latest Crowdstream UUID in DB: {latestCsUUID}")
+                if (data['results'][0]['id'] != str(latestCsUUID)):
+                    con.run("UPDATE data SET latest_crowdstream = :latest_crowdstream", latest_crowdstream=data['results'][0]['id'])
+                    cschannel = client.get_channel(crowdstream)
+                    thiscsitem = data['results'][0]
+                    if cschannel is not None:
+                        embed = discord.Embed(title=thiscsitem['submission_state_text'], color=embedcolor)
+                        embed.set_thumbnail(url=thiscsitem['logo_url'])
+                        embed.add_field(name="Researcher", value=f"[{thiscsitem['researcher_username']}](https://bugcrowd.com{thiscsitem['researcher_profile_path']})", inline=False)
+                        embed.add_field(name="Engagement", value=f"[{thiscsitem['engagement_name']}](https://bugcrowd.com{thiscsitem['engagement_path']})", inline=False)
+                        embed.add_field(name="Priority", value=f"<:p{thiscsitem['priority']}:{pemojis[thiscsitem['priority']-1]}>", inline=False)
+                        embed.set_footer(text=thiscsitem['submission_state_date_text'])
+                        # add button to bottom, called "View CrowdStream"
+                        view = discord.ui.View()
+                        view.add_item(discord.ui.Button(label="View on CrowdStream", url="https://bugcrowd.com/crowdstream"))
+                        await cschannel.send(embed=embed, view=view)
+                    else:
+                        print("Crowdstream channel not found.")
+                    
+            else:
+                print(f"Error fetching crowdstream data: {response.status}")
+    except Exception as e:
+        print(f"Exception in crowdStreamCheck: {e}")
+    
+
+
 @client.event
 async def on_ready():
     client.add_view(firstView())
     client.persistent_views_added = True
     print(f'We have logged in as {client.user}')
+    # run crowdStreamCheck every 10 minutes
+    crowdStreamCheck.start()
+
+
 
 
 
@@ -64,11 +108,13 @@ async def on_message(message):
     if message.author == client.user: # filter bot's own messages
         return
 
-    if message.content.startswith('$createembed'): # create an embed
+    if message.guild is None: # filter DMs
+        return
+    
+    if message.guild.id != server:
+        return
 
-        # check if ok to send
-        if message.guild.id != server:
-            return
+    if message.content.startswith('$createembed'): # create an embed
 
         if message.author.guild_permissions.kick_members:
             embed=discord.Embed(title="Welcome to the Bugcrowd Discord!", description="Bugcrowd's online hacker community. Hacking discussion, collaboration, networking, giveaways, and pizza parties.", color=embedcolor)
@@ -80,16 +126,13 @@ async def on_message(message):
             await logToChannel(f"User {message.author} tried to use the $createembed command without permission.")
 
     if re.search(r'(?:i have a question|(?:hey )?can (?:some|any)(?:one |body )help(?: me)?(?: out)?|i need help|(?:some|any)(?:one|body) (?:online|available|here))(?: please)?', message.content, re.IGNORECASE):
-        # check if ok to send
-        if message.guild.id != server:
-            return
-
         # if message count less than 15
         if con.run("SELECT count FROM leaderboard WHERE user_id = :user_id", user_id=message.author.id):
             await message.reply(embed=dontasktoaskembed, mention_author=True)
 
     # increment the leaderboard, cols are ['user_id', 'count']
-    con.run("INSERT INTO leaderboard (user_id, count) VALUES (:user_id, 1) ON CONFLICT (user_id) DO UPDATE SET count = leaderboard.count + 1", user_id=message.author.id)
+    if message.guild.id == server:
+        con.run("INSERT INTO leaderboard (user_id, count) VALUES (:user_id, 1) ON CONFLICT (user_id) DO UPDATE SET count = leaderboard.count + 1", user_id=message.author.id)
 
 
     
@@ -163,7 +206,7 @@ class CannedResponseView(discord.ui.View):
 
     
 
-    
+
  
 
 @client.message_command(name="Canned Responses")
