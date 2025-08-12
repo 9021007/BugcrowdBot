@@ -73,7 +73,11 @@ async def crowdStreamCheck():
                     if cschannel is not None:
                         embed = discord.Embed(title=thiscsitem['submission_state_text'], color=embedcolor)
                         embed.set_thumbnail(url=thiscsitem['logo_url'])
-                        embed.add_field(name="Researcher", value=f"[{thiscsitem['researcher_username']}](https://bugcrowd.com{thiscsitem['researcher_profile_path']})", inline=False)
+                        # if researcher username key exists
+                        if 'researcher_username' in thiscsitem:
+                            embed.add_field(name="Researcher", value=f"[{thiscsitem['researcher_username']}](https://bugcrowd.com{thiscsitem['researcher_profile_path']})", inline=False)
+                        else:
+                            embed.add_field(name="Researcher", value="Private User", inline=False)
                         embed.add_field(name="Engagement", value=f"[{thiscsitem['engagement_name']}](https://bugcrowd.com{thiscsitem['engagement_path']})", inline=False)
                         embed.add_field(name="Priority", value=f"<:p{thiscsitem['priority']}:{pemojis[thiscsitem['priority']-1]}>", inline=False)
                         embed.set_footer(text=thiscsitem['submission_state_date_text'])
