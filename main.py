@@ -79,11 +79,15 @@ async def crowdStreamCheck():
                         else:
                             embed.add_field(name="Researcher", value="Private User", inline=False)
                         embed.add_field(name="Engagement", value=f"[{thiscsitem['engagement_name']}](https://bugcrowd.com{thiscsitem['engagement_path']})", inline=False)
+                        if 'amount' in thiscsitem:
+                            embed.add_field(name="Reward", value=f"${thiscsitem['amount']}", inline=False)
                         embed.add_field(name="Priority", value=f"<:p{thiscsitem['priority']}:{pemojis[thiscsitem['priority']-1]}>", inline=False)
                         embed.set_footer(text=thiscsitem['submission_state_date_text'])
                         # add button to bottom, called "View CrowdStream"
                         view = discord.ui.View()
-                        view.add_item(discord.ui.Button(label="View on CrowdStream", url="https://bugcrowd.com/crowdstream"))
+                        view.add_item(discord.ui.Button(label="View CrowdStream", url="https://bugcrowd.com/crowdstream"))
+                        if 'disclosure_report_url' in thiscsitem:
+                            view.add_item(discord.ui.Button(label="View Disclosure Report", url=f"https://bugcrowd.com{thiscsitem['disclosure_report_url']}"))
                         await cschannel.send(embed=embed, view=view)
                     else:
                         print("Crowdstream channel not found.")
