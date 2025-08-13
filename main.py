@@ -80,7 +80,7 @@ async def crowdStreamCheck():
                             embed.add_field(name="Researcher", value="Private User", inline=False)
                         embed.add_field(name="Engagement", value=f"[{thiscsitem['engagement_name']}](https://bugcrowd.com{thiscsitem['engagement_path']})", inline=False)
                         if 'amount' in thiscsitem:
-                            embed.add_field(name="Reward", value=f"${thiscsitem['amount']}", inline=False)
+                            embed.add_field(name="Reward", value=thiscsitem['amount'], inline=False)
                         embed.add_field(name="Priority", value=f"<:p{thiscsitem['priority']}:{pemojis[thiscsitem['priority']-1]}>", inline=False)
                         embed.set_footer(text=thiscsitem['submission_state_date_text'])
                         # add button to bottom, called "View CrowdStream"
